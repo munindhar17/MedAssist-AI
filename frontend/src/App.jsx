@@ -14,7 +14,7 @@ import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition"
 
-const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
+const API = import.meta.env.VITE_API_URL || "https://medassist-ai-4.onrender.com"
 
 const symptomAliases = {
   "heart pain": "chest pain",
