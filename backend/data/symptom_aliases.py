@@ -1,0 +1,20 @@
+symptom_aliases = {
+    "heart pain": "chest pain",
+    "cardiac pain": "chest pain",
+    "chest ache": "chest pain",
+    "shortness of breath": "breathlessness",
+    "difficulty breathing": "breathlessness",
+    "rapid heartbeat": "fast heart rate",
+    "heart racing": "fast heart rate",
+    "painful urination": "burning micturition",
+    "burning urination": "burning micturition",
+    "burning urine": "burning micturition",
+    "urgency": "continuous feel of urine",
+    "frequent urination": "polyuria",
+    "high sugar": "increased appetite",
+    "sugar problem": "increased appetite",
+    "stomach ache": "stomach pain",
+    "belly pain": "stomach pain",
+    "black head": "blackheads",
+    "black heads": "blackheads"
+}
