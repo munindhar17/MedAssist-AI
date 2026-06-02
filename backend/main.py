@@ -144,7 +144,8 @@ DISEASE_RISK_LEVELS = {
 
 origins = [
     "http://localhost:5173",
-    "http://127.0.0.1:5173"
+    "http://127.0.0.1:5173",
+    "https://med-assist-ai-fawn.vercel.app"
 ]
 
 extra_origins = [
