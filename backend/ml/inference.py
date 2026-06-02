@@ -10,18 +10,38 @@ from backend.data.symptom_aliases import symptom_aliases
 
 base_dir = Path(__file__).resolve().parent.parent.parent
 
+print("BASE_DIR =", base_dir)
+print("Model exists:", (base_dir / "models" / "disease_model.pkl").exists())
+print("Encoder exists:", (base_dir / "models" / "disease_encoder.pkl").exists())
+print("Columns exists:", (base_dir / "models" / "symptom_columns.pkl").exists())
 
-model = joblib.load(
-    base_dir / "models" / "disease_model.pkl"
-)
+import sklearn
+print("SKLEARN VERSION =", sklearn.__version__)
 
-encoder = joblib.load(
-    base_dir / "models" / "disease_encoder.pkl"
-)
 
-symptom_columns = joblib.load(
-    base_dir / "models" / "symptom_columns.pkl"
-)
+try:
+    model = joblib.load(
+        base_dir / "models" / "disease_model.pkl"
+    )
+except Exception as e:
+    print("MODEL LOAD ERROR:", repr(e))
+    raise
+
+try:
+    encoder = joblib.load(
+        base_dir / "models" / "disease_encoder.pkl"
+    )
+except Exception as e:
+    print("ENCODER LOAD ERROR:", repr(e))
+    raise
+
+try:
+    symptom_columns = joblib.load(
+        base_dir / "models" / "symptom_columns.pkl"
+    )
+except Exception as e:
+    print("SYMPTOM COLUMNS LOAD ERROR:", repr(e))
+    raise
 
 
 DEBUG_PREDICTIONS = os.getenv("DEBUG_PREDICTIONS", "True").lower() == "true"

@@ -60,17 +60,19 @@ severity_file = find_file(
 )
 
 
-description_df = pd.read_csv(
-    description_file
-)
+print("DATASET_DIR =", DATASET_DIR)
+print("Description file:", description_file, "exists:", os.path.exists(description_file))
+print("Precaution file:", precaution_file, "exists:", os.path.exists(precaution_file))
+print("Severity file:", severity_file, "exists:", os.path.exists(severity_file))
 
-precaution_df = pd.read_csv(
-    precaution_file
-)
+description_df = pd.read_csv(description_file)
+print("Loaded description_df shape:", getattr(description_df, 'shape', None))
 
-severity_df = pd.read_csv(
-    severity_file
-)
+precaution_df = pd.read_csv(precaution_file)
+print("Loaded precaution_df shape:", getattr(precaution_df, 'shape', None))
+
+severity_df = pd.read_csv(severity_file)
+print("Loaded severity_df shape:", getattr(severity_df, 'shape', None))
 
 
 severity_dict={}
