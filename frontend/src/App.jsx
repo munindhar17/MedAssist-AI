@@ -326,6 +326,10 @@ function App() {
   }
 
   const saveProfile = () => {
+    if (!profile.name.trim()) {
+      alert("Please enter your name")
+      return
+    }
     localStorage.setItem("healthProfile", JSON.stringify(profile))
     setProfileApplied(true)
   }
@@ -369,8 +373,39 @@ function App() {
 
       await loadHistory()
       await loadAnalytics()
+
+      if (res.data.has_prediction) {
+        setNearbyLoading(true)
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords
+            try {
+              const doctorRes = await axios.get(`${API}/nearby-doctors`, {
+                params: {
+                  latitude,
+                  longitude,
+                  specialty: res.data.recommended_doctor || "General Physician",
+                },
+              })
+              setNearbyDoctors(doctorRes.data || [])
+              setNearbySearched(true)
+            } catch (err) {
+              console.log(err)
+              setNearbySearched(true)
+            } finally {
+              setNearbyLoading(false)
+            }
+          },
+          (error) => {
+            console.log(error)
+            setNearbySearched(true)
+            setNearbyLoading(false)
+          }
+        )
+      }
     } catch (err) {
       console.log(err)
+      alert("Unable to connect to server. Please try again later.")
     } finally {
       setLoading(false)
     }
@@ -431,6 +466,7 @@ function App() {
       setChatReply(res.data.reply)
     } catch (err) {
       console.log(err)
+      setChatReply("Unable to get response. Please try again later.")
     }
   }
 
@@ -565,25 +601,78 @@ function App() {
               {profileApplied && <span className="savedBadge">Saved</span>}
             </div>
             <div className="grid2 profileGrid">
-              {[
-                ["name", "Name", "text", "Name"],
-                ["age", "Age", "number", "Age"],
-                ["gender", "Gender", "text", "Gender"],
-                ["height", "Height (cm)", "number", "Height"],
-                ["weight", "Weight (kg)", "number", "Weight"],
-                ["conditions", "Pre-existing Conditions", "text", "e.g. diabetes, hypertension"],
-                ["allergies", "Allergies", "text", "e.g. penicillin"],
-              ].map(([field, label, type, placeholder]) => (
-                <label key={field}>
-                  {label}
-                  <input
-                    type={type}
-                    value={profile[field]}
-                    onChange={(e) => setProfile({ ...profile, [field]: e.target.value })}
-                    placeholder={placeholder}
-                  />
-                </label>
-              ))}
+              <label>
+                Name
+                <input
+                  type="text"
+                  value={profile.name}
+                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                  placeholder="Name"
+                />
+              </label>
+              <label>
+                Age
+                <input
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={profile.age}
+                  onChange={(e) => setProfile({ ...profile, age: e.target.value })}
+                  placeholder="Age"
+                />
+              </label>
+              <label>
+                Gender
+                <select
+                  value={profile.gender}
+                  onChange={(e) => setProfile({ ...profile, gender: e.target.value })}
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+              <label>
+                Height (cm)
+                <input
+                  type="number"
+                  min="50"
+                  max="250"
+                  value={profile.height}
+                  onChange={(e) => setProfile({ ...profile, height: e.target.value })}
+                  placeholder="Height"
+                />
+              </label>
+              <label>
+                Weight (kg)
+                <input
+                  type="number"
+                  min="2"
+                  max="300"
+                  value={profile.weight}
+                  onChange={(e) => setProfile({ ...profile, weight: e.target.value })}
+                  placeholder="Weight"
+                />
+              </label>
+              <label>
+                Pre-existing Conditions
+                <input
+                  type="text"
+                  value={profile.conditions}
+                  onChange={(e) => setProfile({ ...profile, conditions: e.target.value })}
+                  placeholder="e.g. diabetes, hypertension"
+                />
+              </label>
+              <label>
+                Allergies
+                <input
+                  type="text"
+                  value={profile.allergies}
+                  onChange={(e) => setProfile({ ...profile, allergies: e.target.value })}
+                  placeholder="e.g. penicillin"
+                />
+              </label>
             </div>
             <button className="secondaryBtn" onClick={saveProfile}>
               Save Profile
@@ -910,6 +999,18 @@ function App() {
                     <strong>{analytics.most_common_disease}</strong>
                   </div>
                   <div className="tile analyticsCard">
+                    <h3>Average Severity</h3>
+                    <strong>{analytics.average_severity ?? "N/A"}</strong>
+                  </div>
+                  <div className="tile analyticsCard">
+                    <h3>Predictions This Week</h3>
+                    <strong>{analytics.predictions_this_week ?? 0}</strong>
+                  </div>
+                  <div className="tile analyticsCard">
+                    <h3>Risk Trend</h3>
+                    <strong>{analytics.risk_trend ?? "N/A"}</strong>
+                  </div>
+                  <div className="tile analyticsCard">
                     <h3>Risk Distribution</h3>
                     <div className="riskRows">
                       <span><i className="dot riskLowDot" /> Low: {analytics.risk_distribution.Low}</span>
@@ -918,6 +1019,19 @@ function App() {
                     </div>
                   </div>
                 </div>
+
+                {analytics.most_common_symptoms && analytics.most_common_symptoms.length > 0 && (
+                  <div className="tile">
+                    <h3>Most Common Symptoms</h3>
+                    <div className="chips compactChips">
+                      {analytics.most_common_symptoms.map((symptom) => (
+                        <span key={symptom} className="matchChip">
+                          {formatSymptom(symptom)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {trendData.length === 1 && (
                   <div className="tile trendSummary">

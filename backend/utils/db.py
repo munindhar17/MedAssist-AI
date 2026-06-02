@@ -77,6 +77,25 @@ def save_prediction(
 
     cursor.execute(
         """
+        SELECT disease, symptoms
+        FROM history
+        WHERE prediction_version = ?
+        ORDER BY id DESC
+        LIMIT 1
+        """,
+        (prediction_version,)
+    )
+
+    last_row = cursor.fetchone()
+
+    if last_row:
+        last_disease, last_symptoms = last_row
+        if last_disease == disease and last_symptoms == current_symptoms:
+            conn.close()
+            return
+
+    cursor.execute(
+        """
         INSERT INTO history(
             symptoms,
             disease,

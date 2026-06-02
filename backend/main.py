@@ -893,7 +893,7 @@ def predict(data: SymptomInput):
         has_prediction,
 
         "predictions":
-        predictions if has_prediction else [],
+        predictions[:3] if has_prediction else [],
 
         "severity_score":
         final_severity_score,
@@ -1016,6 +1016,14 @@ def analytics():
 
             "most_common_disease": "N/A",
 
+            "average_severity": 0,
+
+            "most_common_symptoms": [],
+
+            "predictions_this_week": 0,
+
+            "risk_trend": "N/A",
+
             "risk_distribution": {
 
                 "Low": 0,
@@ -1038,18 +1046,39 @@ def analytics():
 
     }
 
+    severities = []
+    all_symptoms = []
+
+    from datetime import datetime, timedelta
+
+    week_ago = datetime.now() - timedelta(days=7)
+
+    predictions_this_week = 0
+
     for row in valid_predictions:
 
         disease = row[2]
         risk = row[5]
+        severity = row[4]
+        symptoms_str = row[1]
+        time_str = row[6]
 
-        diseases.append(
-            disease
-        )
+        diseases.append(disease)
+        severities.append(severity)
 
         if risk in risks:
-
             risks[risk] += 1
+
+        if symptoms_str:
+            symptoms = [s.strip() for s in symptoms_str.split(",")]
+            all_symptoms.extend(symptoms)
+
+        try:
+            pred_time = datetime.strptime(time_str, "%d-%b-%Y %I:%M %p")
+            if pred_time >= week_ago:
+                predictions_this_week += 1
+        except ValueError:
+            pass
 
     severity_trend = [
         {
@@ -1064,19 +1093,37 @@ def analytics():
         key=diseases.count
     )
 
+    average_severity = sum(severities) / len(severities) if severities else 0
+
+    from collections import Counter
+
+    symptom_counts = Counter(all_symptoms)
+    most_common_symptoms = [symptom for symptom, _ in symptom_counts.most_common(5)]
+
+    risk_distribution_list = list(risks.values())
+    if risk_distribution_list:
+        max_risk = max(risk_distribution_list)
+        risk_trend = "Improving" if risks["Low"] >= max_risk / 2 else "Stable" if risks["Medium"] >= max_risk / 2 else "Worsening"
+    else:
+        risk_trend = "N/A"
+
     return {
 
-        "total_predictions":
-        total,
+        "total_predictions": total,
 
-        "most_common_disease":
-        most_common,
+        "most_common_disease": most_common,
 
-        "risk_distribution":
-        risks,
+        "average_severity": round(average_severity, 1),
 
-        "severity_trend":
-        severity_trend
+        "most_common_symptoms": most_common_symptoms,
+
+        "predictions_this_week": predictions_this_week,
+
+        "risk_trend": risk_trend,
+
+        "risk_distribution": risks,
+
+        "severity_trend": severity_trend
 
     }
 
@@ -1125,89 +1172,151 @@ def download_report():
 @app.get("/nearby-doctors")
 def nearby_doctors(latitude: float, longitude: float, specialty: str):
 
-    doctor_data = {
-        "Cardiologist": [
-            {
-                "name": "Apollo Hospital",
-                "specialty": "Cardiologist",
-                "distance": "2.1 km"
-            },
-            {
-                "name": "Yashoda Hospital",
-                "specialty": "Cardiologist",
-                "distance": "3.5 km"
-            }
-        ],
-        "Dermatologist": [
-            {
-                "name": "Care Hospital",
-                "specialty": "Dermatologist",
-                "distance": "1.8 km"
-            }
-        ],
-        "Neurologist": [
-            {
-                "name": "AIG Hospital",
-                "specialty": "Neurologist",
-                "distance": "4.2 km"
-            }
-        ],
-        "Gastroenterologist": [
-            {
-                "name": "Asian Institute of Gastroenterology",
-                "specialty": "Gastroenterologist",
-                "distance": "2.3 km"
-            },
-            {
-                "name": "Gastro Care Clinic",
-                "specialty": "Gastroenterologist",
-                "distance": "4.1 km"
-            }
-        ],
-        "Pulmonologist": [
-            {
-                "name": "Lung Care Center",
-                "specialty": "Pulmonologist",
-                "distance": "3.2 km"
-            }
-        ],
-        "Endocrinologist": [
-            {
-                "name": "Diabetes Care Hospital",
-                "specialty": "Endocrinologist",
-                "distance": "2.8 km"
-            }
-        ],
-        "Urologist": [
-            {
-                "name": "Care Urology Center",
-                "specialty": "Urologist",
-                "distance": "2.5 km"
-            },
-            {
-                "name": "Apollo Urology Clinic",
-                "specialty": "Urologist",
-                "distance": "4.0 km"
-            }
-        ],
-        "General Physician": [
-            {
-                "name": "Sunrise Clinic",
-                "specialty": "General Physician",
-                "distance": "1.2 km"
-            },
-            {
-                "name": "City Medical Center",
-                "specialty": "General Physician",
-                "distance": "2.4 km"
-            }
-        ]
+    import requests
+    import math
+
+    specialty_keywords = {
+        "Cardiologist": ["cardiologist", "cardiac", "heart"],
+        "Dermatologist": ["dermatologist", "skin", "derma"],
+        "Neurologist": ["neurologist", "neurology", "brain"],
+        "Gastroenterologist": ["gastroenterologist", "gastro", "stomach"],
+        "Pulmonologist": ["pulmonologist", "lung", "respiratory"],
+        "Endocrinologist": ["endocrinologist", "endocrinology", "diabetes"],
+        "Urologist": ["urologist", "urology"],
+        "General Physician": ["hospital", "clinic", "medical", "health center"]
     }
 
-    return doctor_data.get(
-        specialty,
-        doctor_data["General Physician"]
-    )
+    keywords = specialty_keywords.get(specialty, ["hospital", "clinic"])
+
+    doctors = []
+
+    try:
+        for keyword in keywords[:2]:
+            query = f"{keyword} near {latitude},{longitude}"
+            url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=5"
+
+            headers = {"User-Agent": "MedAssist-AI"}
+
+            response = requests.get(url, headers=headers, timeout=5)
+
+            if response.status_code == 200:
+                results = response.json()
+
+                for result in results:
+                    if len(doctors) >= 8:
+                        break
+
+                    try:
+                        lat = float(result.get("lat", 0))
+                        lon = float(result.get("lon", 0))
+
+                        distance = math.sqrt(
+                            (lat - latitude) ** 2 +
+                            (lon - longitude) ** 2
+                        ) * 111
+
+                        doctor_entry = {
+                            "name": result.get("name", "Medical Facility"),
+                            "specialty": specialty,
+                            "distance": f"{distance:.1f} km"
+                        }
+
+                        doctors.append(doctor_entry)
+                    except (ValueError, TypeError):
+                        continue
+
+            if len(doctors) >= 3:
+                break
+
+    except Exception as e:
+        print(f"Error fetching doctors: {e}")
+
+    if not doctors:
+        doctor_data = {
+            "Cardiologist": [
+                {
+                    "name": "Apollo Hospital",
+                    "specialty": "Cardiologist",
+                    "distance": "2.1 km"
+                },
+                {
+                    "name": "Yashoda Hospital",
+                    "specialty": "Cardiologist",
+                    "distance": "3.5 km"
+                }
+            ],
+            "Dermatologist": [
+                {
+                    "name": "Care Hospital",
+                    "specialty": "Dermatologist",
+                    "distance": "1.8 km"
+                }
+            ],
+            "Neurologist": [
+                {
+                    "name": "AIG Hospital",
+                    "specialty": "Neurologist",
+                    "distance": "4.2 km"
+                }
+            ],
+            "Gastroenterologist": [
+                {
+                    "name": "Asian Institute of Gastroenterology",
+                    "specialty": "Gastroenterologist",
+                    "distance": "2.3 km"
+                },
+                {
+                    "name": "Gastro Care Clinic",
+                    "specialty": "Gastroenterologist",
+                    "distance": "4.1 km"
+                }
+            ],
+            "Pulmonologist": [
+                {
+                    "name": "Lung Care Center",
+                    "specialty": "Pulmonologist",
+                    "distance": "3.2 km"
+                }
+            ],
+            "Endocrinologist": [
+                {
+                    "name": "Diabetes Care Hospital",
+                    "specialty": "Endocrinologist",
+                    "distance": "2.8 km"
+                }
+            ],
+            "Urologist": [
+                {
+                    "name": "Care Urology Center",
+                    "specialty": "Urologist",
+                    "distance": "2.5 km"
+                },
+                {
+                    "name": "Apollo Urology Clinic",
+                    "specialty": "Urologist",
+                    "distance": "4.0 km"
+                }
+            ],
+            "General Physician": [
+                {
+                    "name": "Sunrise Clinic",
+                    "specialty": "General Physician",
+                    "distance": "1.2 km"
+                },
+                {
+                    "name": "City Medical Center",
+                    "specialty": "General Physician",
+                    "distance": "2.4 km"
+                }
+            ]
+        }
+
+        doctors = doctor_data.get(
+            specialty,
+            doctor_data["General Physician"]
+        )
+
+    return doctors
 
 
 @app.post("/chat")
