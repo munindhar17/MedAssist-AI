@@ -1,107 +1,153 @@
-# MedAssist AI
+MedAssist AI
 
-AI-assisted symptom triage with disease ranking, confidence calibration, triage levels, doctor recommendations, analytics, PDF reports, and contextual Ask MedAssist support.
+AI-powered symptom analysis and health insights.
 
-This tool is informational only and is not a substitute for professional medical care.
+MedAssist AI is a full-stack healthcare assistant that analyzes user symptoms using a machine learning model and provides:
 
-## Local Setup
+Disease prediction
+Confidence score
+Risk assessment
+Severity calculation
+Recommended specialist
+Nearby doctors
+Health analytics dashboard
+Voice symptom input
+PDF report generation
 
-### Backend
+Live Demo:
 
-```bash
+🌐 https://med-assist-ai-fawn.vercel.app/
+
+Features
+AI symptom-based disease prediction
+Voice-to-text symptom input
+Health profile management
+Prediction confidence visualization
+Disease descriptions and precautions
+Suggested additional symptoms
+Nearby doctor recommendations
+PDF report download
+Health analytics dashboard
+Responsive modern UI
+Tech Stack
+Frontend
+React
+Vite
+Axios
+Chart.js
+Backend
+FastAPI
+Python
+Scikit-learn
+XGBoost
+Pandas
+NumPy
+Deployment
+Frontend: Vercel
+Backend: Render
+Project Structure
+MedAssist-AI/
+│
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   └── package.json
+│
+├── backend/
+│   ├── main.py
+│   ├── ml/
+│   ├── models/
+│   ├── utils/
+│   └── requirements.txt
+│
+├── datasets/
+├── tests/
+└── README.md
+Running Locally
+Clone repository
+git clone https://github.com/munindhar17/MedAssist-AI.git
+
+cd MedAssist-AI
+Backend
 cd backend
-python -m venv .venv
-.venv\Scripts\activate
+
 pip install -r requirements.txt
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
-```
 
-If running from the repository root:
+uvicorn main:app --reload
 
-```bash
-pip install -r backend/requirements.txt
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
-```
+Backend runs at:
 
-### Frontend
+http://127.0.0.1:8000
 
-```bash
+Swagger API:
+
+http://127.0.0.1:8000/docs
+Frontend
 cd frontend
+
 npm install
+
 npm run dev
-```
 
-Default local URLs:
+Frontend runs at:
 
-- Backend: `http://127.0.0.1:8000`
-- Frontend: `http://localhost:5173`
+http://localhost:5173
+API Endpoints
+Method	Endpoint	Description
+GET	/symptoms	Get available symptoms
+POST	/predict	Predict disease
+GET	/nearby-doctors	Find nearby doctors
+POST	/generate-report	Download PDF report
+Sample Prediction
+Input Symptoms
+chest pain
+breathlessness
+sweating
+Output
+Disease: Heart Attack
 
-## Environment Variables
+Confidence: 76.5%
 
-Create `.env` files for deployment-specific values.
+Risk: High
 
-Backend `.env` example:
+Severity: 28
 
-```bash
-ENV=production
-DEBUG_PREDICTIONS=False
-ALLOWED_ORIGINS=https://your-vercel-app.vercel.app
-```
+Recommended Doctor:
+Cardiologist
+Deployment
+Frontend
 
-Frontend `.env` example:
+Vercel:
 
-```bash
-VITE_API_URL=https://your-render-backend.onrender.com
-```
+https://med-assist-ai-fawn.vercel.app/
+Backend
 
-## Deployment
+Render:
 
-### Backend on Render
+https://medassist-ai-4.onrender.com
 
-1. Create a new Render Web Service.
-2. Connect this repository.
-3. Set the root directory to the repository root.
-4. Use a Python runtime.
-5. Build command:
+API Documentation:
 
-```bash
-pip install -r backend/requirements.txt
-```
+https://medassist-ai-4.onrender.com/docs
+Disclaimer
 
-6. Start command:
+This application is intended for educational and demonstration purposes only.
 
-```bash
-uvicorn backend.main:app --host 0.0.0.0 --port $PORT
-```
+It is not a substitute for professional medical advice, diagnosis, or treatment. Users should always consult qualified healthcare professionals for medical concerns.
 
-7. Add environment variables from the backend `.env` example.
+Author
 
-### Frontend on Vercel
+Munindhar Chandanagiri
 
-1. Import the repository into Vercel.
-2. Set the project root to `frontend`.
-3. Build command:
+GitHub:
+https://github.com/munindhar17
 
-```bash
-npm run build
-```
+I would also add a Demo section near the top, because recruiters immediately look for it:
 
-4. Output directory:
+## Live Demo
 
-```bash
-dist
-```
+🌐 Frontend:
+https://med-assist-ai-fawn.vercel.app/
 
-5. Add `VITE_API_URL` pointing to the Render backend URL.
-
-## Prediction Versioning
-
-Current prediction engine version: `v3`.
-
-Analytics and history only use latest-version predictions so older scoring behavior does not pollute severity trends or disease counts.
-
-## Production Notes
-
-- Keep `DEBUG_PREDICTIONS=False` in production.
-- Review CORS origins before deployment.
-- The model is only one input. Final ranking prioritizes symptom overlap, category consistency, calibrated confidence, triage level, and red-flag safety rules.
+⚡ API Docs:
+https://medassist-ai-4.onrender.com/docs
